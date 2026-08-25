@@ -20,7 +20,7 @@ class ProductServiceTest {
   @BeforeEach
   void setUp() {
     productClient = mock(ProductClient.class);
-    service = new ProductServiceImpl(productClient);
+    service = new ProductServiceImpl(productClient, 5);
   }
 
   @Test
