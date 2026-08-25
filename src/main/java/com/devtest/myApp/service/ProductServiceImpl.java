@@ -21,19 +21,7 @@ public class ProductServiceImpl implements ProductService {
     return productClient
         .getSimilarProductsIds(productId)
         .flatMapMany(Flux::fromIterable)
-        .flatMapSequential(
-            similarId ->
-                productClient
-                    .getProductDetailById(similarId)
-                    .onErrorResume(
-                        ex -> {
-                          log.error(
-                              "Skipping similar product {} for product {}: {}",
-                              similarId,
-                              productId,
-                              ex.toString());
-                          return Mono.empty();
-                        }))
+        .flatMapSequential(productClient::getProductDetailById)
         .collectList();
   }
 }

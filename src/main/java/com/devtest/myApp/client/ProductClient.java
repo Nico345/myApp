@@ -25,7 +25,7 @@ public class ProductClient {
         .uri("/product/{productId}", id)
         .retrieve()
         .bodyToMono(ProductDetailDto.class)
-        .doOnError(ex -> log.debug("Could not fetch detail for product {}: {}", id, ex.toString()));
+        .onErrorMap(this::isNotFound, ex -> new ProductNotFoundException(id));
   }
 
   public Mono<List<String>> getSimilarProductsIds(String id) {

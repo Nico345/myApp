@@ -42,7 +42,7 @@ class ProductServiceTest {
   }
 
   @Test
-  void skipsSimilarProductsThatCannotBeFetched() {
+  void failsWholeRequestWhenAnySimilarProductCannotBeFetched() {
     when(productClient.getSimilarProductsIds("1")).thenReturn(Mono.just(List.of("2", "3", "4")));
     when(productClient.getProductDetailById("2"))
         .thenReturn(Mono.just(new ProductDetailDto("2", "Product 2", 10.0, true)));
@@ -52,13 +52,21 @@ class ProductServiceTest {
         .thenReturn(Mono.just(new ProductDetailDto("4", "Product 4", 30.0, true)));
 
     StepVerifier.create(service.getSimilarProducts("1"))
-        .assertNext(
-            list -> {
-              org.assertj.core.api.Assertions.assertThat(list)
-                  .extracting(ProductDetailDto::id)
-                  .containsExactly("2", "4");
-            })
-        .verifyComplete();
+        .expectErrorMatches(ex -> ex.getMessage().equals("missing"))
+        .verify();
+  }
+
+  @Test
+  void failsWithNotFoundWhenASimilarProductNoLongerExists() {
+    when(productClient.getSimilarProductsIds("1")).thenReturn(Mono.just(List.of("2", "3")));
+    when(productClient.getProductDetailById("2"))
+        .thenReturn(Mono.just(new ProductDetailDto("2", "Product 2", 10.0, true)));
+    when(productClient.getProductDetailById("3"))
+        .thenReturn(Mono.error(new ProductNotFoundException("3")));
+
+    StepVerifier.create(service.getSimilarProducts("1"))
+        .expectError(ProductNotFoundException.class)
+        .verify();
   }
 
   @Test
