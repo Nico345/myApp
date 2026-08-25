@@ -1,7 +1,6 @@
 package com.devtest.myApp.service;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.devtest.myApp.client.ProductClient;
 import com.devtest.myApp.dto.ProductDetailDto;
@@ -24,8 +23,9 @@ class ProductServiceTest {
   }
 
   @Test
-  void returnsDetailsInSimilarityOrder() {
-    when(productClient.getSimilarProductsIds("1")).thenReturn(Mono.just(List.of("2", "3")));
+  void returnsUniqueDetailsInSimilarityOrder() {
+    when(productClient.getSimilarProductsIds("1")).thenReturn(Mono.just(List.of("2", "3", "2")));
+
     when(productClient.getProductDetailById("2"))
         .thenReturn(Mono.just(new ProductDetailDto("2", "Product 2", 10.0, true)));
     when(productClient.getProductDetailById("3"))
@@ -39,6 +39,9 @@ class ProductServiceTest {
                   .containsExactly("2", "3");
             })
         .verifyComplete();
+
+    verify(productClient, times(1)).getProductDetailById("2");
+    verify(productClient, times(1)).getProductDetailById("3");
   }
 
   @Test

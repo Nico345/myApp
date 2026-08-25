@@ -27,6 +27,7 @@ public class ProductServiceImpl implements ProductService {
     return productClient
         .getSimilarProductsIds(productId)
         .flatMapMany(Flux::fromIterable)
+        .distinct()
         .flatMapSequential(productClient::getProductDetailById, concurrency)
         .collectList();
   }
