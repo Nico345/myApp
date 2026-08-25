@@ -8,6 +8,7 @@ import com.devtest.myApp.exception.ProductNotFoundException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -19,7 +20,8 @@ class ProductServiceTest {
   @BeforeEach
   void setUp() {
     productClient = mock(ProductClient.class);
-    service = new ProductServiceImpl(productClient, 5);
+    service = new ProductServiceImpl(productClient);
+    ReflectionTestUtils.setField(service, "concurrency", 5);
   }
 
   @Test
