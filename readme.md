@@ -7,9 +7,7 @@ This application provides an endpoint to retrieve the details of products simila
 You can run the application using Docker with the following commands:
 
 - `docker build -t my-app .`
--
-
-`docker run -d --rm --name my-app --network backenddevtest-main_default -e EXTERNAL_API_BASE_URL=http://backenddevtest-main-simulado-1:80 -p 5000:5000 my-app`
+- `docker run -d --rm --name my-app --network backenddevtest-main_default -e EXTERNAL_API_BASE_URL=http://backenddevtest-main-simulado-1:80 -p 5000:5000 my-app`
 
 ## Running with Maven
 
