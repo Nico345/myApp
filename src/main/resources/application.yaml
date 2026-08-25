@@ -8,3 +8,4 @@ server:
 external-api:
   base-url: http://localhost:3001
   timeout-ms: 5000
+  concurrency: 5

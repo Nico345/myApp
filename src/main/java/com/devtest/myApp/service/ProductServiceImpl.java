@@ -5,6 +5,7 @@ import com.devtest.myApp.dto.ProductDetailDto;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -16,12 +17,15 @@ public class ProductServiceImpl implements ProductService {
 
   private final ProductClient productClient;
 
+  @Value("${external-api.concurrency:5}")
+  private int concurrency;
+
   @Override
   public Mono<List<ProductDetailDto>> getSimilarProducts(String productId) {
     return productClient
         .getSimilarProductsIds(productId)
         .flatMapMany(Flux::fromIterable)
-        .flatMapSequential(productClient::getProductDetailById)
+        .flatMapSequential(productClient::getProductDetailById, concurrency)
         .collectList();
   }
 }
