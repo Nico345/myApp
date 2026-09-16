@@ -9,3 +9,19 @@ external-api:
   base-url: http://localhost:3001
   timeout-ms: 5000
   concurrency: 5
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      externalApi:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 1s
+        slow-call-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        ignore-exceptions:
+          - com.devtest.myApp.exception.ProductNotFoundException
