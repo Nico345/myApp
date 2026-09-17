@@ -6,6 +6,9 @@ import static org.mockito.Mockito.*;
 import com.devtest.myApp.client.ProductClient;
 import com.devtest.myApp.dto.ProductDetailDto;
 import com.devtest.myApp.exception.ProductNotFoundException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,5 +103,22 @@ class ProductServiceTest {
     StepVerifier.create(service.getSimilarProducts("1"))
         .assertNext(list -> assertThat(list).isEmpty())
         .verifyComplete();
+  }
+
+  @Test
+  void propagatesCircuitBreakerFailureInsteadOfSkippingTheProduct() {
+    when(productClient.getSimilarProductsIds("1")).thenReturn(Mono.just(List.of("2", "3")));
+
+    CircuitBreaker circuitBreaker = CircuitBreaker.of("test", CircuitBreakerConfig.ofDefaults());
+    CallNotPermittedException circuitOpenException =
+        CallNotPermittedException.createCallNotPermittedException(circuitBreaker);
+
+    when(productClient.getProductDetailById("2"))
+        .thenReturn(Mono.just(new ProductDetailDto("2", "Product 2", 10.0, true)));
+    when(productClient.getProductDetailById("3")).thenReturn(Mono.error(circuitOpenException));
+
+    StepVerifier.create(service.getSimilarProducts("1"))
+        .expectError(CallNotPermittedException.class)
+        .verify();
   }
 }
