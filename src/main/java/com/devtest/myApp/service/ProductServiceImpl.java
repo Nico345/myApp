@@ -2,6 +2,8 @@ package com.devtest.myApp.service;
 
 import com.devtest.myApp.client.ProductClient;
 import com.devtest.myApp.dto.ProductDetailDto;
+import com.devtest.myApp.exception.ProductNotFoundException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,11 +34,20 @@ public class ProductServiceImpl implements ProductService {
                     .getProductDetailById(similarId)
                     .onErrorResume(
                         ex -> {
-                          log.error(
-                              "Skipping similar product {} for product {}: {}",
-                              similarId,
-                              productId,
-                              ex.toString());
+                          if (ex instanceof CallNotPermittedException) {
+                            return Mono.error(ex);
+                          } else if (ex instanceof ProductNotFoundException) {
+                            log.debug(
+                                "Skipping similar product {} for product {}: not found",
+                                similarId,
+                                productId);
+                          } else {
+                            log.warn(
+                                "Skipping similar product {} for product {}: {}",
+                                similarId,
+                                productId,
+                                ex.toString());
+                          }
                           return Mono.empty();
                         }),
             concurrency)
