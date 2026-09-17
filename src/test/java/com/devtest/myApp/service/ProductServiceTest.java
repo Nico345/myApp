@@ -1,5 +1,6 @@
 package com.devtest.myApp.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import com.devtest.myApp.client.ProductClient;
@@ -35,11 +36,7 @@ class ProductServiceTest {
 
     StepVerifier.create(service.getSimilarProducts("1"))
         .assertNext(
-            list -> {
-              org.assertj.core.api.Assertions.assertThat(list)
-                  .extracting(ProductDetailDto::id)
-                  .containsExactly("2", "3");
-            })
+            list -> assertThat(list).extracting(ProductDetailDto::id).containsExactly("2", "3"))
         .verifyComplete();
 
     verify(productClient, times(1)).getProductDetailById("2");
@@ -58,11 +55,19 @@ class ProductServiceTest {
 
     StepVerifier.create(service.getSimilarProducts("1"))
         .assertNext(
-            list -> {
-              org.assertj.core.api.Assertions.assertThat(list)
-                  .extracting(ProductDetailDto::id)
-                  .containsExactly("2", "4");
-            })
+            list -> assertThat(list).extracting(ProductDetailDto::id).containsExactly("2", "4"))
+        .verifyComplete();
+  }
+
+  @Test
+  void skipsSimilarProductWhenUpstreamFailsWithGenericError() {
+    when(productClient.getSimilarProductsIds("1")).thenReturn(Mono.just(List.of("2", "3")));
+    when(productClient.getProductDetailById("2"))
+        .thenReturn(Mono.just(new ProductDetailDto("2", "Product 2", 10.0, true)));
+    when(productClient.getProductDetailById("3")).thenReturn(Mono.error(new RuntimeException()));
+
+    StepVerifier.create(service.getSimilarProducts("1"))
+        .assertNext(list -> assertThat(list).extracting(ProductDetailDto::id).containsExactly("2"))
         .verifyComplete();
   }
 
@@ -81,7 +86,19 @@ class ProductServiceTest {
     when(productClient.getSimilarProductsIds("1")).thenReturn(Mono.just(List.of()));
 
     StepVerifier.create(service.getSimilarProducts("1"))
-        .assertNext(list -> org.assertj.core.api.Assertions.assertThat(list).isEmpty())
+        .assertNext(list -> assertThat(list).isEmpty())
+        .verifyComplete();
+  }
+
+  @Test
+  void returnsEmptyListWhenAllSimilarProductsFail() {
+    when(productClient.getSimilarProductsIds("1")).thenReturn(Mono.just(List.of("2", "3")));
+    when(productClient.getProductDetailById("2"))
+        .thenReturn(Mono.error(new ProductNotFoundException("2")));
+    when(productClient.getProductDetailById("3")).thenReturn(Mono.error(new RuntimeException()));
+
+    StepVerifier.create(service.getSimilarProducts("1"))
+        .assertNext(list -> assertThat(list).isEmpty())
         .verifyComplete();
   }
 }
