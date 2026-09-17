@@ -14,16 +14,3 @@ You can run the application using Docker with the following commands:
 Alternatively, you can run the application directly with Maven:
 
 - `.\mvnw.cmd spring-boot:run`
-
-## Observations
-
-1. When fetching the details of similar products, an error for any individual product will fail the entire request.
-
-   This behavior is intentional because the provided k6 tests expect product ID `4` to return a `404` and product ID `5`
-   to return a `500`.
-
-2. Requests for product ID `3` intentionally take longer than the default Spring MVC request timeout and will result in
-   a timeout exception.
-
-   However, the similar products returned by this request can be verified by increasing both the Spring MVC request
-   timeout and the WebClient timeout.
